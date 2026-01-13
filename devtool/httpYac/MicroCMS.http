@@ -1,0 +1,11 @@
+@service_id = da9sloenoh
+@api_key = I7WHJoIXdi38XH58l5qHwymHFkvVkb1T04T8
+@post_id = xdsg6j_mg-r
+
+### 全投稿の取得
+GET https://{{service_id}}.microcms.io/api/v1/posts
+X-MICROCMS-API-KEY : {{api_key}}
+
+### 単投稿の取得
+GET https://{{service_id}}.microcms.io/api/v1/posts/{{post_id}}
+X-MICROCMS-API-KEY : {{api_key}}

@@ -1,0 +1,2 @@
+### カテゴリ一覧の取得
+GET  http://localhost:3000/api/categories
