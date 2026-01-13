@@ -22,7 +22,7 @@ const Header: React.FC = () => {
   // ▲ 追加
 
   return (
-    <header>
+    <header className="sticky top-0 z-50">
       <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-lg">
         <div
           className={twMerge(
