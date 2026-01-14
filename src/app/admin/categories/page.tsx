@@ -52,9 +52,11 @@ const AdminCategoriesPage: React.FC = () => {
 
   if (!categories) {
     return (
-      <div className="text-gray-500">
-        <FontAwesomeIcon icon={faSpinner} className="mr-1 animate-spin" />
-        Loading...
+      <div className="fixed inset-0 z-40 flex items-center justify-center bg-white/70">
+        <div className="flex items-center space-x-3 text-slate-600">
+          <span className="inline-block h-6 w-6 rounded-full border-4 border-slate-300 border-t-indigo-500 animate-spin" />
+          <span>読み込み中...</span>
+        </div>
       </div>
     );
   }
