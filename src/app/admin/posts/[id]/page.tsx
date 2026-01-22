@@ -5,12 +5,22 @@ import Link from "next/link";
 import type { Category } from "@/app/_types/Category";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import CryptoJS from "crypto-js";
+import { supabase } from "@/utils/supabase";
+import Image from "next/image";
+
+// ファイルのMD5ハッシュ値を計算する関数
+const calculateMD5Hash = async (file: File): Promise<string> => {
+  const buffer = await file.arrayBuffer();
+  const wordArray = CryptoJS.lib.WordArray.create(buffer);
+  return CryptoJS.MD5(wordArray).toString();
+};
 
 type PostData = {
   id: string;
   title: string;
   content: string;
-  coverImageURL: string;
+  coverImageKey: string;
   categories: { category: { id: string; name: string } }[];
 };
 
@@ -23,9 +33,10 @@ const AdminPostEditPage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [coverImageURL, setCoverImageURL] = useState("");
+  const [coverImageKey, setCoverImageKey] = useState("");
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -42,7 +53,7 @@ const AdminPostEditPage: React.FC = () => {
         setCategories(categoriesData);
         setTitle(postData.title);
         setContent(postData.content);
-        setCoverImageURL(postData.coverImageURL);
+        setCoverImageKey(postData.coverImageKey);
         setSelectedCategoryIds(postData.categories.map((c: PostCategory) => c.category.id));
       } catch (error) {
         console.error(error);
@@ -53,7 +64,8 @@ const AdminPostEditPage: React.FC = () => {
     fetchData();
   }, [id]);
 
-  const handleUpdate = async () => {
+  const handleUpdate = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     try {
       const response = await fetch(`/api/admin/posts/${id}`, {
         method: "PUT",
@@ -61,7 +73,7 @@ const AdminPostEditPage: React.FC = () => {
         body: JSON.stringify({
           title,
           content,
-          coverImageURL,
+          coverImageKey,
           categoryIds: selectedCategoryIds
         })
       });
@@ -74,7 +86,8 @@ const AdminPostEditPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     if (!confirm("この投稿を削除しますか？")) return;
     
     try {
@@ -89,6 +102,37 @@ const AdminPostEditPage: React.FC = () => {
       alert("削除に失敗しました");
     }
   };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    const file = e.target.files[0];
+    setIsUploading(true);
+    
+    try {
+      const fileHash = await calculateMD5Hash(file);
+      const path = `private/${fileHash}`;
+      const { data, error } = await supabase.storage
+        .from("cover-image")
+        .upload(path, file, { upsert: true });
+
+      if (error || !data) {
+        window.alert(`アップロードに失敗: ${error?.message}`);
+        return;
+      }
+      
+      setCoverImageKey(data.path);
+    } catch (error) {
+      console.error(error);
+      window.alert("画像のアップロードに失敗しました");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const coverPreviewUrl = coverImageKey
+    ? supabase.storage.from("cover-image").getPublicUrl(coverImageKey).data.publicUrl
+    : undefined;
 
   if (loading) {
     return (
@@ -127,13 +171,42 @@ const AdminPostEditPage: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-sm sm:text-base font-medium mb-1">カバー画像URL</label>
+          <label className="block text-sm sm:text-base font-medium mb-1">カバー画像ファイル</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            disabled={isUploading}
+            className="w-full border rounded px-2 py-1 sm:px-3 sm:py-2 text-sm sm:text-base file:rounded file:px-2 file:py-1 file:bg-blue-500 file:text-white hover:file:bg-blue-600 file:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+          {isUploading && (
+            <p className="text-sm text-blue-600 mt-1">
+              <FontAwesomeIcon icon={faSpinner} className="mr-1 animate-spin" />
+              アップロード中...
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm sm:text-base font-medium mb-1">カバー画像キー</label>
           <input
             type="text"
-            value={coverImageURL}
-            onChange={(e) => setCoverImageURL(e.target.value)}
+            value={coverImageKey}
+            onChange={(e) => setCoverImageKey(e.target.value)}
             className="w-full border rounded px-2 py-1 sm:px-3 sm:py-2 text-sm sm:text-base"
           />
+          {coverPreviewUrl && (
+            <div className="mt-2">
+              <Image
+                src={coverPreviewUrl}
+                alt="カバー画像プレビュー"
+                width={800}
+                height={500}
+                className="w-full h-48 object-cover rounded-md"
+                unoptimized
+              />
+            </div>
+          )}
         </div>
 
         <div>
@@ -169,12 +242,14 @@ const AdminPostEditPage: React.FC = () => {
           </Link>
           <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto order-1 sm:order-2">
             <button
+              type="button"
               onClick={handleUpdate}
               className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm sm:text-base font-semibold"
             >
               更新
             </button>
             <button
+              type="button"
               onClick={handleDelete}
               className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm sm:text-base font-semibold"
             >

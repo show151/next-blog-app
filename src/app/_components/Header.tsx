@@ -34,7 +34,7 @@ const Header: React.FC = () => {
           <div>
             <Link href="/" className="hover:text-pink-100 transition-colors flex items-center">
               <FontAwesomeIcon icon={faFish} className="mr-1 md:mr-2 text-pink-200 text-lg md:text-xl" />
-              <span className="hidden sm:inline">Show's Life Blog</span>
+              <span className="hidden sm:inline">Show Life Blog</span>
             </Link>
           </div>
           <div className="flex gap-x-2 md:gap-x-6 text-xs md:text-base">

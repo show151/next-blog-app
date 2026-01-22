@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import type { Post } from "@/app/_types/Post";
 import PostSummary from "@/app/_components/PostSummary";
@@ -29,9 +29,29 @@ const PostsPageContent: React.FC = () => {
     fetchCategories();
   }, []);
 
+  const filterPosts = useCallback(() => {
+    let filtered = posts;
+
+    if (searchQuery) {
+      filtered = filtered.filter(post =>
+        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.content.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    if (selectedCategory) {
+      filtered = filtered.filter(post => 
+        post.categories && post.categories.some(pc => pc.category.id === selectedCategory)
+      );
+    }
+
+    setFilteredPosts(filtered);
+    setCurrentPage(1);
+  }, [posts, searchQuery, selectedCategory]);
+
   useEffect(() => {
     filterPosts();
-  }, [posts, searchQuery, selectedCategory]);
+  }, [filterPosts]);
 
   const fetchPosts = async () => {
     try {
@@ -53,26 +73,6 @@ const PostsPageContent: React.FC = () => {
     } catch (error) {
       console.error("Failed to fetch categories:", error);
     }
-  };
-
-  const filterPosts = () => {
-    let filtered = posts;
-
-    if (searchQuery) {
-      filtered = filtered.filter(post =>
-        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.content.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (selectedCategory) {
-      filtered = filtered.filter(post => 
-        post.categories && post.categories.some(pc => pc.category.id === selectedCategory)
-      );
-    }
-
-    setFilteredPosts(filtered);
-    setCurrentPage(1);
   };
 
   const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE);

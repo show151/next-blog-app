@@ -4,6 +4,8 @@ import Link from "next/link";
 import type { Post } from "@/app/_types/Post";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner, faEdit, faTrash, faPlus, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { supabase } from "@/utils/supabase";
+import Image from "next/image";
 
 const AdminPostsPage: React.FC = () => {
   const [posts, setPosts] = useState<Post[] | null>(null);
@@ -79,11 +81,25 @@ const AdminPostsPage: React.FC = () => {
             key={post.id}
             className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-lg border p-3 sm:p-4 shadow-sm hover:shadow-md gap-3 sm:gap-0"
           >
-            <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-semibold truncate">{post.title}</h3>
-              <p className="text-xs sm:text-sm text-gray-600">
-                {new Date(post.createdAt).toLocaleDateString()}
-              </p>
+            <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
+              {post.coverImageKey && (
+                <div className="w-20 h-14 relative flex-shrink-0 overflow-hidden rounded-md bg-slate-100">
+                  <Image
+                    src={supabase.storage.from("cover-image").getPublicUrl(post.coverImageKey).data.publicUrl}
+                    alt={post.title}
+                    fill
+                    sizes="80px"
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-semibold truncate">{post.title}</h3>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  {new Date(post.createdAt).toLocaleDateString()}
+                </p>
+              </div>
             </div>
             <div className="flex space-x-2 justify-end">
               <Link

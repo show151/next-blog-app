@@ -4,6 +4,8 @@ import Link from "next/link";
 import DOMPurify from "isomorphic-dompurify";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendar, faTag } from "@fortawesome/free-solid-svg-icons";
+import Image from "next/image";
+import { supabase } from "@/utils/supabase";
 
 type Props = {
   post: Post;
@@ -14,12 +16,27 @@ const PostSummary: React.FC<Props> = (props) => {
   const safeHTML = DOMPurify.sanitize(post.content, {
     ALLOWED_TAGS: ["b", "strong", "i", "em", "u", "br"],
   });
+  const coverImageUrl = post.coverImageKey
+    ? supabase.storage.from("cover-image").getPublicUrl(post.coverImageKey).data.publicUrl
+    : undefined;
   
   console.log('Post categories:', post.categories); // デバッグ用
   
   return (
     <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
       <Link href={`/posts/${post.id}`} className="block">
+        {coverImageUrl && (
+          <div className="mb-4">
+            <Image
+              src={coverImageUrl}
+              alt={post.title}
+              width={800}
+              height={500}
+              className="w-full h-48 object-cover rounded-md"
+              unoptimized
+            />
+          </div>
+        )}
         <h2 className="mb-3 text-xl font-bold text-slate-800 hover:text-blue-600 transition-colors">
           {post.title}
         </h2>

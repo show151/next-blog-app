@@ -5,6 +5,17 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import Link from "next/link";
+import { useAuth } from "@/app/_hooks/useAuth";
+import { supabase } from "@/utils/supabase";
+import Image from "next/image";
+import CryptoJS from "crypto-js";
+
+// ファイルのMD5ハッシュ値を計算する関数
+const calculateMD5Hash = async (file: File): Promise<string> => {
+  const buffer = await file.arrayBuffer();
+  const wordArray = CryptoJS.lib.WordArray.create(buffer);
+  return CryptoJS.MD5(wordArray).toString();
+};
 
 // カテゴリをフェッチしたときのレスポンスのデータ型
 type CategoryApiResponse = {
@@ -26,10 +37,11 @@ const Page: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fetchErrorMsg, setFetchErrorMsg] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
-  const [newCoverImageURL, setNewCoverImageURL] = useState("");
+  const [newCoverImageKey, setNewCoverImageKey] = useState("");
 
   const router = useRouter();
 
@@ -37,6 +49,12 @@ const Page: React.FC = () => {
   const [checkableCategories, setCheckableCategories] = useState<
     SelectableCategory[] | null
   >(null);
+
+  const { token } = useAuth(); // トークンの取得
+
+  const coverPreviewUrl = newCoverImageKey
+    ? supabase.storage.from("cover-image").getPublicUrl(newCoverImageKey).data.publicUrl
+    : undefined;
 
   // コンポーネントがマウントされたとき (初回レンダリングのとき) に1回だけ実行
   useEffect(() => {
@@ -106,9 +124,36 @@ const Page: React.FC = () => {
     setNewContent(e.target.value);
   };
 
-  const updateNewCoverImageURL = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const updateNewCoverImageKey = (e: React.ChangeEvent<HTMLInputElement>) => {
     // ここにカバーイメージURLのバリデーション処理を追加する
-    setNewCoverImageURL(e.target.value);
+    setNewCoverImageKey(e.target.value);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    const file = e.target.files[0];
+    setIsUploading(true);
+    
+    try {
+      const fileHash = await calculateMD5Hash(file);
+      const path = `private/${fileHash}`;
+      const { data, error } = await supabase.storage
+        .from("cover-image")
+        .upload(path, file, { upsert: true });
+
+      if (error || !data) {
+        window.alert(`アップロードに失敗: ${error?.message}`);
+        return;
+      }
+      
+      setNewCoverImageKey(data.path);
+    } catch (error) {
+      console.error(error);
+      window.alert("画像のアップロードに失敗しました");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   // フォームの送信処理
@@ -122,18 +167,25 @@ const Page: React.FC = () => {
       const requestBody = {
         title: newTitle,
         content: newContent,
-        coverImageURL: newCoverImageURL,
+        coverImageKey: newCoverImageKey,
         categoryIds: checkableCategories
           ? checkableCategories.filter((c) => c.isSelect).map((c) => c.id)
           : [],
       };
       const requestUrl = "/api/admin/posts";
       console.log(`${requestUrl} => ${JSON.stringify(requestBody, null, 2)}`);
+
+      if (!token) {
+        window.alert("予期せぬ動作：トークンが取得できません。");
+        return;
+      }
+
       const res = await fetch(requestUrl, {
         method: "POST",
         cache: "no-store",
         headers: {
           "Content-Type": "application/json",
+          Authorization: token,
         },
         body: JSON.stringify(requestBody),
       });
@@ -223,21 +275,58 @@ const Page: React.FC = () => {
         </div>
 
         <div className="space-y-1">
-          <label htmlFor="coverImageURL" className="block font-bold text-sm sm:text-base">
-            カバーイメージ (URL)
+          <label htmlFor="coverImageFile" className="block font-bold text-sm sm:text-base">
+            カバー画像ファイル
           </label>
           <input
-            type="url"
-            id="coverImageURL"
-            name="coverImageURL"
-            className="w-full rounded-md border-2 px-2 py-1 sm:px-3 sm:py-2 text-sm sm:text-base"
-            value={newCoverImageURL}
-            onChange={updateNewCoverImageURL}
-            placeholder="カバーイメージのURLを記入してください"
-            required
+            type="file"
+            id="coverImageFile"
+            accept="image/*"
+            onChange={handleImageUpload}
+            disabled={isUploading}
+            className={twMerge(
+              "w-full rounded-md border-2 px-2 py-1 sm:px-3 sm:py-2 text-sm sm:text-base",
+              "file:rounded file:px-2 file:py-1",
+              "file:bg-blue-500 file:text-white hover:file:bg-blue-600",
+              "file:cursor-pointer",
+              isUploading && "opacity-50 cursor-not-allowed"
+            )}
           />
+          {isUploading && (
+            <p className="text-sm text-blue-600">
+              <FontAwesomeIcon icon={faSpinner} className="mr-1 animate-spin" />
+              アップロード中...
+            </p>
+          )}
         </div>
 
+        <div className="space-y-1">
+          <label htmlFor="coverImageKey" className="block font-bold text-sm sm:text-base">
+            カバーイメージキー
+          </label>
+          <input
+            type="text"
+            id="coverImageKey"
+            name="coverImageKey"
+            className="w-full rounded-md border-2 px-2 py-1 sm:px-3 sm:py-2 text-sm sm:text-base"
+            value={newCoverImageKey}
+            onChange={updateNewCoverImageKey}
+            placeholder="例: cover-img-red.jpg"
+            required
+          />
+          {coverPreviewUrl && (
+            <div className="mt-2">
+              <Image
+                src={coverPreviewUrl}
+                alt="カバー画像プレビュー"
+                width={800}
+                height={500}
+                className="w-full h-48 object-cover rounded-md"
+                unoptimized
+              />
+            </div>
+          )}
+        </div>
         <div className="space-y-1 sm:space-y-2">
           <div className="font-bold text-sm sm:text-base">タグ</div>
           <div className="flex flex-wrap gap-3 sm:gap-x-3.5 gap-y-2">

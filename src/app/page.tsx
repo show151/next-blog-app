@@ -69,7 +69,7 @@ const Page: React.FC = () => {
               className="text-4xl sm:text-5xl text-pink-600" 
             />
             <div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-slate-800 mb-2">Show's Life Blog</h1>
+              <h1 className="text-3xl sm:text-4xl font-bold text-slate-800 mb-2">Shows Life Blog</h1>
               <p className="text-base sm:text-lg text-slate-600">人生の旅路での学びと気づき</p>
             </div>
           </div>
@@ -85,7 +85,7 @@ const Page: React.FC = () => {
         </div>
         
         {/* サイト概要 */}
-        <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-4 sm:p-6 border border-pink-200 mb-8"> {/* eslint-disable-line */}
+        <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-4 sm:p-6 border border-pink-200 mb-8">
           <h2 className="text-lg sm:text-xl font-semibold text-slate-800 mb-3">このブログについて</h2>
           <p className="text-sm sm:text-base text-slate-700 leading-relaxed mb-4">
             日々の生活での小さな発見、人生の転機、成長の瞬間、大切な人との出会いなど、

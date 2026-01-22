@@ -7,6 +7,9 @@ type RouteParams = {
   }>;
 };
 
+export const revalidate = 0; // ◀ サーバサイドのキャッシュを無効化する設定
+export const dynamic = "force-dynamic"; // ◀ 〃
+
 export const GET = async (req: NextRequest, routeParams: RouteParams) => {
   try {
     // パラメータプレースホルダから id を取得
@@ -20,7 +23,7 @@ export const GET = async (req: NextRequest, routeParams: RouteParams) => {
         id: true,
         title: true,
         content: true,
-        coverImageURL: true,
+        coverImageKey: true,
         createdAt: true,
         updatedAt: true,
         categories: {

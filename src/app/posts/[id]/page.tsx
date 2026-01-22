@@ -6,6 +6,7 @@ import type { Post } from "@/app/_types/Post";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner, faCalendar, faTag } from "@fortawesome/free-solid-svg-icons";
 import Image from "next/image";
+import { supabase } from "@/utils/supabase";
 
 import DOMPurify from "isomorphic-dompurify";
 
@@ -68,6 +69,11 @@ const Page: React.FC = () => {
     ALLOWED_TAGS: ["b", "strong", "i", "em", "u", "br"],
   });
 
+  // カバー画像の公開URLを生成（キーのみ保持しているため）
+  const coverImageUrl = post.coverImageKey
+    ? supabase.storage.from("cover-image").getPublicUrl(post.coverImageKey).data.publicUrl
+    : undefined;
+
   return (
     <main className="px-4 py-6 max-w-4xl mx-auto">
       <article className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
@@ -98,14 +104,14 @@ const Page: React.FC = () => {
           </div>
         </header>
         
-        {post.coverImageURL && (
+        {post.coverImageKey && coverImageUrl && (
           <div className="mb-6">
             <Image
-              src={post.coverImageURL}
+              src={coverImageUrl}
               alt={post.title}
               width={800}
               height={600}
-              priority
+              unoptimized
               className="rounded-xl w-full h-auto"
             />
           </div>

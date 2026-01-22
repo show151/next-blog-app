@@ -1,4 +1,17 @@
-import { prisma } from "@/lib/prisma";
+
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { config } from "dotenv";
+import { Pool } from "pg";
+
+// 環境変数を読み込む
+config();
+
+const pool = new Pool({
+  connectionString: process.env.DIRECT_URL,
+});
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 const main = async () => {
   // 各テーブルから既存の全レコードを削除
@@ -18,8 +31,7 @@ const main = async () => {
     data: {
       title: "人生の転機を迎えて - 決断の先にあるもの",
       content: "人生には時に大きな決断の時が訪れます。<br/>新しい道を選ぶか、今までの道を続けるか。<br/>その決断の先には、想像もしていなかった景色が広がっていました。<br/>失敗を恐れず、自分の心の声に耳を傾けることの大切さを学びました。",
-      coverImageURL:
-        "https://w1980.blob.core.windows.net/pg3/cover-img-red.jpg",
+      coverImageKey: "cover-img-red.jpg",
       categories: {
         create: [{ categoryId: c1.id }, { categoryId: c3.id }],
       },
@@ -30,8 +42,7 @@ const main = async () => {
     data: {
       title: "人間関係の深さと向き合うこと",
       content: "誰もが人間関係に悩み、苦しむ経験をします。<br/>しかし、その過程こそが人生を豊かにする最高の学びです。<br/>相手を理解しようとする努力、そして自分を知ってもらう勇気。<br/>これらが揃った時、本当に意味のある繋がりが生まれるのです。",
-      coverImageURL:
-        "https://w1980.blob.core.windows.net/pg3/cover-img-green.jpg",
+      coverImageKey: "cover-img-green.jpg",
       categories: {
         create: [{ categoryId: c2.id }, { categoryId: c1.id }],
       },
@@ -42,8 +53,7 @@ const main = async () => {
     data: {
       title: "毎日の小さな積み重ねが人生を作る",
       content: "大きな目標も素晴らしいですが、毎日の小さな積み重ねが最も大事です。<br/>一日一日を丁寧に生きること。<br/>朝日を見つめ、人と笑い、新しいことに挑戦する。<br/>こうした習慣の積み重ねが、気づいた時には素晴らしい人生になっているのです。",
-      coverImageURL:
-        "https://w1980.blob.core.windows.net/pg3/cover-img-purple.jpg",
+      coverImageKey: "cover-img-purple.jpg",
       categories: {
         create: [{ categoryId: c4.id }, { categoryId: c5.id }],
       },

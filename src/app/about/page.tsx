@@ -92,7 +92,7 @@ const Page: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 sm:p-6 text-center border border-purple-200"> {/* eslint-disable-line */}
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 sm:p-6 text-center border border-purple-200"> 
           <h3 className="text-base sm:text-lg font-semibold text-slate-800 mb-2">
             一緒に人生を歩んでいきましょう
           </h3>
