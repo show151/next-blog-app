@@ -34,8 +34,37 @@ export const useAuth = () => {
       },
     );
 
+    // タブを閉じる/離脱するときにログアウト（永続化なしでも明示的にサインアウト）
+    const handlePageHide = async () => {
+      try {
+        await supabase.auth.signOut();
+        setSession(null);
+        setToken(null);
+      } catch (err) {
+        console.error("signOut on pagehide failed", err);
+      }
+    };
+
+    // visibilitychange で非表示になったときもログアウトを試行
+    const handleVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        handlePageHide();
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("pagehide", handlePageHide);
+      document.addEventListener("visibilitychange", handleVisibility);
+    }
+
     // アンマウント時に監視を解除（クリーンアップ）
-    return () => authListener?.subscription?.unsubscribe();
+    return () => {
+      authListener?.subscription?.unsubscribe();
+      if (typeof window !== "undefined") {
+        window.removeEventListener("pagehide", handlePageHide);
+        document.removeEventListener("visibilitychange", handleVisibility);
+      }
+    };
   }, []);
 
   return { isLoading, session, token };
